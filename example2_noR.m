@@ -16,9 +16,9 @@ n = 40; % number of nodes
 m = 60;
 p = 50; % the dimension of x on each nodes
 
-L = n;
-per = 16/L;
-resSubPath = 'per16overL_mu0_2';
+% L = n;
+% per = 16/L;
+resSubPath = 'per1-40overL_mu0_2';
 % call which function to change M
 modifyM_num = 7;
 Mrate = 2;
@@ -26,11 +26,17 @@ Mrate = 2;
 min_mu = 0.2; % set the smallest strongly convex parameter mu in S
 max_Lips = 1; % set the Lipschitz constant
 
-W = generateW(L,per);
+% W = generateW(L,per);
+load('matW.mat','W');
+[~,~,len_W] = size(W);
 [M, x_ori, y_ori] = generateS(m, p, n,...
     'withoutNonsmoothR',min_mu,max_Lips,Mrate,modifyM_num);
 
-[~, lambdan] = eigW(W); % find the smallest eigenvalue of W
+% find the smallest eigenvalue of W
+lambdan = zeros(len_W,1);
+for i = 1:len_W
+    [~, lambdan(i)] = eigW(W(:,:,i));
+end
 
 [Lips,mus] = getBetaSmoothAlphaStrong;
 max_Lips   = max(Lips);
@@ -79,8 +85,8 @@ for i = 1:numMethods
             paras.alpha = cRate./max_Lips*ones(n,1);
             paras.atc = 1;
             outputs{i}  = obj.minimize_DIGing(paras);
-            legend_lab{i} = ['DIGing-ATC-',num2str(cRate),'/L'];
-        
+            legend_lab{i} = 'DIGing-ATC';
+            
         case {'DIGing'}
             paras.alpha = cRate./max_Lips*ones(n,1);
             paras.atc = 0;
@@ -91,52 +97,58 @@ for i = 1:numMethods
             alpha = cRate./Lips;
             paras.alpha = alpha;
             
+            %
             eye_L = eye(n);
-            I_W   = eye_L-W;
-            [U,S,V] = svd(I_W);
-            a = diag(S);
-            inv_I_W = U*diag([a(1:end-1).^(-1);0])*V';
-            alpha2 = diag(sqrt(1./alpha));
-            eigs = eig(alpha2*inv_I_W*alpha2);
-            [~, indmin]=min(eigs);
-            ind = ones(size(eigs)); ind(indmin) = 0;
-            lambda_n_1 = min(eigs(logical(ind)));
-            c= lambda_n_1;
+            c = zeros(len_W,1);
+            for j = 1:len_W
+                I_W = eye_L-W(:,:,j);
+                [U,S,V] = svd(I_W);
+                a = diag(S);
+                inv_I_W = U*diag([a(1:end-1).^(-1);0])*V';
+                alpha2 = diag(sqrt(1./alpha));
+                eigs = eig(alpha2*inv_I_W*alpha2);
+                [~, indmin]=min(eigs);
+                ind = ones(size(eigs)); ind(indmin) = 0;
+                lambda_n_1 = min(eigs(logical(ind)));
+                c(j) = lambda_n_1;
+            end
             
-            paras.c     = c;
+            paras.c = c;
             outputs{i} = obj.minimize(paras);
-            legend_lab{i} = ['NIDS-adaptive'];
+            legend_lab{i} = 'NIDS-adaptive';
             
         case {'NIDSS'}
             cRate = 1; % rate of the step size < 2
             
             alpha = cRate./max_Lips*ones(n,1);
-            c = 1/(1-lambdan)/max(alpha);
+            c = 1./(1-lambdan)/max(alpha);
             paras.alpha = alpha;
             paras.c = c;
-            
+            paras.forcetTildeW = 0;
             outputs{i} = obj.minimize(paras);
-            legend_lab{i} = ['NIDS-',num2str(cRate),'/L'];
+            legend_lab{i} = 'NIDS-$c={1/(\alpha(1-\lambda_n(\mathbf{W}))}$';
+            
         case {'NIDSS-F'}
             cRate = 1; % rate of the step size < 2
             
             alpha = cRate./max_Lips*ones(n,1);
+            
             paras.alpha = alpha;
             
             paras.forcetTildeW = true;
             paras.method = 'NIDSS';
             
             outputs{i} = obj.minimize(paras);
-            legend_lab{i} = ['NIDS-$\widetilde W = {I+W\over 2}$-',num2str(cRate),'/L'];
+            legend_lab{i} = 'NIDS-$c={1/( 2\alpha)}$';
             
         case {'EXTRA'}
             cRate = 1;
             
             paras.alpha = cRate./max_Lips*ones(n,1);
             outputs{i} = obj.minimize(paras);
-            legend_lab{i} = ['EXTRA-',num2str(cRate),'/L'];
+            legend_lab{i} = ['EXTRA'];
         otherwise
-            display('????')
+            disp('????')
     end
 end
 for i = 1:numMethods

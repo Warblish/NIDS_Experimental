@@ -17,9 +17,9 @@ n = 40;
 m = 3;
 p = 200;
 
-L = n;
-per = 4/L;
-resSubPath = 'per4overL_mu0_1';
+% L = n;
+% per = 4/L;
+resSubPath = 'per1-40overL_mu0_1';
 
 % may changed in the following function
 min_mu = 0.1; % set the smallest strongly convex parameter mu in S
@@ -28,11 +28,16 @@ max_Lips = 1; % set the Lipschitz constant
 % lam is the parameter in function R
 % [M, x_ori, y_ori, lam, W] = generateAll(m, p, n, per,...
 %     'withNonsmoothR', min_mu,max_Lips);
-W = generateW(L,per);
+load('matW.mat','W');
+[~,~,len_W] = size(W);
 [M, x_ori, y_ori, lam] = generateS(m, p, n,...
     'withNonsmoothR',min_mu,max_Lips);
 
-[~, lambdan] = eigW(W); % find the smallest eigenvalue of W
+% find the smallest eigenvalue of W
+lambdan = zeros(len_W,1);
+for i = 1:len_W
+    [~, lambdan(i)] = eigW(W(:,:,i));
+end
 
 % find the max Lipschitz constants and strongly convex parameters of the function S
 [Lips,mus] = getBetaSmoothAlphaStrong;
@@ -95,7 +100,10 @@ for i = 1:numMethods
                 cRate = cRate_NIDS(j);
                 alpha = cRate./Lips;
                 
-                c = 1/(1-lambdan)/max(alpha);
+                c = zeros(len_W,1);
+                for k = 1:len_W
+                    c(k) = 1/(1-lambdan(k))/max(alpha);
+                end
                 % c = 0.5/max(alpha);
                 paras.alpha = alpha;
                 paras.c = c;
