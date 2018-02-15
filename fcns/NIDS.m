@@ -16,6 +16,7 @@ classdef NIDS
     %
     %       Downloadable from ?????                                                              %%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
     properties
         getGradS   =  @(x) 0;            % gradient of S      gradS: x  --> grad(S)(x)
         getProxR   =  @(x,t) x;          % prox of R          proxR: x,t  --> prox(t.R)(x)
@@ -46,6 +47,7 @@ classdef NIDS
             for i = 1:len_W
                 I_W(:,:,i) = eye_L - W(:,:,i);
             end
+            set_len_W = 1;
             
             if isfield(paras, 'forcetTildeW') && paras.forcetTildeW
                 for i = 1:len_W
@@ -86,7 +88,9 @@ classdef NIDS
                     gradS_old = gradS;                      % increase k by 1
                     gradS   = this.getGradS(x_cur);         % increase k by 1
                 case {'PG-EXTRA', 'PGEXTRA', 'EXTRA'}
-                    z       = W * x_cur - diag(alpha) * gradS;
+                    rand_integer = randi(set_len_W);
+                    disp(rand_integer);
+                    z       = W(:,:,rand_integer) * x_cur - diag(alpha) * gradS;
                     x_new   = this.getProxR(z, alpha);
                     x_old   = x_cur;                        % increase k by 1
                     x_cur   = x_new;                        % increase k by 1
@@ -104,12 +108,16 @@ classdef NIDS
                 switch method
                     case {'NIDS', 'NIDS-adaptive', 'NIDSS', 'NIDSS-adaptive'}
                         x_bar = 2 * x_cur - x_old - diag(alpha) * (gradS - gradS_old);
-                        z     = z - x_cur + tildeW(:,:,randi(len_W)) * x_bar;
+                        rand_integer = randi(set_len_W);
+                        disp(rand_integer);
+                        z     = z - x_cur + tildeW(:,:,rand_integer) * x_bar;
                         x_new = this.getProxR(z, alpha);
                         
                     case {'PG-EXTRA', 'PGEXTRA', 'EXTRA'}
                         x_bar = 2 * x_cur - x_old;
-                        z = z - x_cur + tildeW(:,:,randi(len_W)) * x_bar - diag(alpha) * (gradS - gradS_old);
+                        rand_integer = randi(set_len_W);
+                        disp(rand_integer);
+                        z = z - x_cur + tildeW(:,:,rand_integer) * x_bar - diag(alpha) * (gradS - gradS_old);
                         x_new = this.getProxR(z, alpha);
                     otherwise
                         warning('Unexpected Method, Please choose from ?? ')
@@ -156,18 +164,23 @@ classdef NIDS
             err(1)  = norm(x_cur - x_star,'fro');
             eng(1)  = this.E(x_cur);
             x_array = cell(iter,1); % store all x values
+            set_len_W = 1;
             
             convergeTol = 0;                    % reach convergence tolerance or not
             
             for i=1:iter
                 if atc == 1
-                    x_new = W(:,:,randi(len_W)) * (x_cur - diag(alpha) * y_cur);
-                    gradS_new = this.getGradS(x_new);
-                    y_new = W(:,:,randi(len_W)) * (y_cur + gradS_new - gradS);
+                    rand_integer = randi(set_len_W);
+                    disp(rand_integer);
+                    x_new = W(:,:,rand_integer) * (x_cur - diag(alpha) * y_cur);
+                    gradS_new = this.getGradS(x_new);                    
+                    y_new = W(:,:,rand_integer) * (y_cur + gradS_new - gradS);
                 else
-                    x_new = W(:,:,randi(len_W)) * x_cur - diag(alpha) * y_cur;
-                    gradS_new = this.getGradS(x_new);
-                    y_new = W(:,:,randi(len_W)) * y_cur + gradS_new - gradS;
+                    rand_integer = randi(set_len_W);
+                    disp(rand_integer);
+                    x_new = W(:,:,rand_integer) * x_cur - diag(alpha) * y_cur;
+                    gradS_new = this.getGradS(x_new);                    
+                    y_new = W(:,:,rand_integer) * y_cur + gradS_new - gradS;
                 end
                 x_array{i} = x_new;
                 
