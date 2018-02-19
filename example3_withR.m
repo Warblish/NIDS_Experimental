@@ -80,11 +80,11 @@ methods = {'NIDS','PGEXTRA'};
 numMethods = length(methods);
 
 
-cRate_NIDS = [4, 5];
+cRate_NIDS = [3.5, 3.6, 3.7];
 LineSpecs_NIDS = {':k','--k','-k','-*r','-.y','-.c',':r',':k',':m',':b'};
 numcRate_NIDS = length(cRate_NIDS);
 
-cRate_PGEXTRA = [1.4, 1.41];
+cRate_PGEXTRA = [1.3, 1.4];
 LineSpecs_PGEXTRA = {':b','--b','-b','-m','-c'};
 numcRate_PGEXTRA = length(cRate_PGEXTRA);
 
