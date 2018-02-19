@@ -43,7 +43,7 @@ max_Lips   = max(Lips);
 min_mu     = min(mus);
 
 % set parameters
-iter    = 200;
+iter    = 100;
 tol     = 1e-11;     % tolerance, this controls |x-x_star|_F, not divided by |x_star|_F
 x0      = zeros(n,p);
 x_star  = x_ori;     % true solution

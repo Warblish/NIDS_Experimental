@@ -45,7 +45,7 @@ max_Lips   = max(Lips);
 min_mu     = min(mus);
 
 % set parameters
-iter    = 2000;      % the maximum number of iterations
+iter    = 100;      % the maximum number of iterations
 tol     = 1e-11;     % tolerance, this controls |x-x_star|_F, not divided by |x_star|_F
 x0      = zeros(n,p);% initial guess of the solution
 x_star  = x_ori;     % true solution

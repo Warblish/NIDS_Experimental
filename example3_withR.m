@@ -28,6 +28,7 @@ max_Lips = 1; % set the Lipschitz constant
 % lam is the parameter in function R
 % [M, x_ori, y_ori, lam, W] = generateAll(m, p, n, per,...
 %     'withNonsmoothR', min_mu,max_Lips);
+% generate the network W
 load('matW.mat','W');
 [~,~,len_W] = size(W);
 [M, x_ori, y_ori, lam] = generateS(m, p, n,...
@@ -44,7 +45,7 @@ end
 max_Lips = max(Lips);
 min_mu = min(mus);
 % set parameters
-iter    = 1000;
+iter    = 20000;
 tol     = 1e-7;     % tolerance, this controls |x-x_star|_F, not divided by |x_star|_F
 
 x0      = zeros(n,p);
@@ -79,11 +80,11 @@ methods = {'NIDS','PGEXTRA'};
 numMethods = length(methods);
 
 
-cRate_NIDS = [1, 1.5, 1.9];
+cRate_NIDS = [2, 2.5, 3, 3.8];
 LineSpecs_NIDS = {':k','--k','-k','-*r','-.y','-.c',':r',':k',':m',':b'};
 numcRate_NIDS = length(cRate_NIDS);
 
-cRate_PGEXTRA = [1, 1.2, 1.3, 1.4];
+cRate_PGEXTRA = [1.3];
 LineSpecs_PGEXTRA = {':b','--b','-b','-m','-c'};
 numcRate_PGEXTRA = length(cRate_PGEXTRA);
 
