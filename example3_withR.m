@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 function example3_withR
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %      minimize S(x) + R(x)   subject to Wx = x                                              
