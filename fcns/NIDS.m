@@ -47,7 +47,7 @@ classdef NIDS
             for i = 1:len_W
                 I_W(:,:,i) = eye_L - W(:,:,i);
             end
-            set_len_W = 1;
+            set_len_W = len_W;
             
             if isfield(paras, 'forcetTildeW') && paras.forcetTildeW
                 for i = 1:len_W
@@ -62,7 +62,9 @@ classdef NIDS
                             tildeW(:,:,i) = eye_L - c(i) * diag(alpha) * I_W(:,:,i);
                         end
                     case {'PG-EXTRA', 'PGEXTRA', 'EXTRA'}
-                        tildeW = (eye_L + W)/2;
+                        for i = 1:len_W
+                            tildeW(:,:,i) = (eye_L + W(:,:,i))/2;
+                        end
                 end
             end
             
@@ -89,7 +91,6 @@ classdef NIDS
                     gradS   = this.getGradS(x_cur);         % increase k by 1
                 case {'PG-EXTRA', 'PGEXTRA', 'EXTRA'}
                     rand_integer = randi(set_len_W);
-                    disp(rand_integer);
                     z       = W(:,:,rand_integer) * x_cur - diag(alpha) * gradS;
                     x_new   = this.getProxR(z, alpha);
                     x_old   = x_cur;                        % increase k by 1
@@ -109,14 +110,12 @@ classdef NIDS
                     case {'NIDS', 'NIDS-adaptive', 'NIDSS', 'NIDSS-adaptive'}
                         x_bar = 2 * x_cur - x_old - diag(alpha) * (gradS - gradS_old);
                         rand_integer = randi(set_len_W);
-                        disp(rand_integer);
                         z     = z - x_cur + tildeW(:,:,rand_integer) * x_bar;
                         x_new = this.getProxR(z, alpha);
                         
                     case {'PG-EXTRA', 'PGEXTRA', 'EXTRA'}
                         x_bar = 2 * x_cur - x_old;
                         rand_integer = randi(set_len_W);
-                        disp(rand_integer);
                         z = z - x_cur + tildeW(:,:,rand_integer) * x_bar - diag(alpha) * (gradS - gradS_old);
                         x_new = this.getProxR(z, alpha);
                     otherwise
@@ -171,13 +170,11 @@ classdef NIDS
             for i=1:iter
                 if atc == 1
                     rand_integer = randi(set_len_W);
-                    disp(rand_integer);
                     x_new = W(:,:,rand_integer) * (x_cur - diag(alpha) * y_cur);
                     gradS_new = this.getGradS(x_new);                    
                     y_new = W(:,:,rand_integer) * (y_cur + gradS_new - gradS);
                 else
                     rand_integer = randi(set_len_W);
-                    disp(rand_integer);
                     x_new = W(:,:,rand_integer) * x_cur - diag(alpha) * y_cur;
                     gradS_new = this.getGradS(x_new);                    
                     y_new = W(:,:,rand_integer) * y_cur + gradS_new - gradS;
