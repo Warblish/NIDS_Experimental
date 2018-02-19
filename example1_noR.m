@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 function example1_noR
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %      minimize S(x)   subject to Wx = x
