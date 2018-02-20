@@ -16,7 +16,7 @@ n = 40; % number of nodes
 m = 60;
 p = 50; % the dimension of x on each nodes
 
-% L = n;
+L = n;
 % per = 16/L;
 resSubPath = 'per1-40overL_mu0_2';
 % call which function to change M
