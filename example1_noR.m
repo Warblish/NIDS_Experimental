@@ -26,7 +26,10 @@ min_mu = 0.5; % set the smallest strongly convex parameter mu in S
 max_Lips = 1; % set the Lipschitz constant
 
 % generate the network W
-load('matW.mat','W');
+for k = 1:40
+    per = k/L;
+    W(:,:,k) = generateW(L, per);
+end
 [~,~,len_W] = size(W);
 % generate the smooth function S
 [M, x_ori, y_ori] = generateS(m, p, n,...

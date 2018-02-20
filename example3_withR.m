@@ -29,7 +29,10 @@ max_Lips = 1; % set the Lipschitz constant
 % [M, x_ori, y_ori, lam, W] = generateAll(m, p, n, per,...
 %     'withNonsmoothR', min_mu,max_Lips);
 % generate the network W
-load('matW.mat','W');
+for k = 1:40
+    per = k/L;
+    W(:,:,k) = generateW(L, per);
+end
 [~,~,len_W] = size(W);
 [M, x_ori, y_ori, lam] = generateS(m, p, n,...
     'withNonsmoothR',min_mu,max_Lips);

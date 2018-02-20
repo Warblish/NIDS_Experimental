@@ -27,7 +27,10 @@ min_mu = 0.2; % set the smallest strongly convex parameter mu in S
 max_Lips = 1; % set the Lipschitz constant
 
 % W = generateW(L,per);
-load('matW.mat','W');
+for k = 1:40
+    per = k/L;
+    W(:,:,k) = generateW(L, per);
+end
 [~,~,len_W] = size(W);
 [M, x_ori, y_ori] = generateS(m, p, n,...
     'withoutNonsmoothR',min_mu,max_Lips,Mrate,modifyM_num);
