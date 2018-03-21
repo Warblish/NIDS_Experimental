@@ -164,18 +164,21 @@ classdef NIDS
             err(1)  = norm(x_cur - x_star,'fro');
             eng(1)  = this.E(x_cur);
             x_array = cell(iter,1); % store all x values
-            set_len_W = len_W;
+            set_len_W = len;
             
             convergeTol = 0;                    % reach convergence tolerance or not
             
             for i=1:iter
                 if atc == 1
+                    rng('shuffle')
                     rand_integer = randi(set_len_W);   
-                    disp(rand_integer)
+                    disp(set_len_W)
+%                     disp(rand_integer)
                     x_new = W(:,:,rand_integer) * (x_cur - diag(alpha) * y_cur);
                     gradS_new = this.getGradS(x_new);                    
                     y_new = W(:,:,rand_integer) * (y_cur + gradS_new - gradS);
                 else
+                    rng('shuffle')
                     rand_integer = randi(set_len_W);
                     disp(rand_integer)
                     x_new = W(:,:,rand_integer) * x_cur - diag(alpha) * y_cur;

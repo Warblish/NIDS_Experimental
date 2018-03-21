@@ -35,6 +35,8 @@ end
 [M, x_ori, y_ori] = generateS(m, p, n,...
     'withoutNonsmoothR',min_mu,max_Lips);
 
+rng('shuffle')
+
 % find the smallest eigenvalue of W
 lambdan = zeros(len_W,1);
 for i = 1:len_W
@@ -48,7 +50,7 @@ max_Lips   = max(Lips);
 min_mu     = min(mus);
 
 % set parameters
-iter    = 100;      % the maximum number of iterations
+iter    = 1000;      % the maximum number of iterations
 tol     = 1e-11;     % tolerance, this controls |x-x_star|_F, not divided by |x_star|_F
 x0      = zeros(n,p);% initial guess of the solution
 x_star  = x_ori;     % true solution
@@ -75,7 +77,7 @@ h   = figure;
 set(h, 'DefaultLineLineWidth', 4)
 norm_x_star = norm(x_star, 'fro');
 
-methods = {'NIDSS','NIDSS-F','EXTRA','DIGing-ATC'};
+methods = {'NIDSS','NIDSS-F','EXTRA','DIGing'};
 LineSpecs = {'-k','--k','-.b',':m'};
 numMethods = length(methods);
 outputs = cell(numMethods,1);
@@ -95,6 +97,7 @@ for i = 1:numMethods
             paras.alpha = cRate./max_Lips*ones(n,1);
             paras.atc = 0;
             outputs{i} = obj.minimize_DIGing(paras);
+            legend_lab{i} = 'DIGing';
             
         case {'NIDSS-adaptive'}
             cRate = 1; % rate of the step size < 2
@@ -181,6 +184,8 @@ function a = funGradS(x)
 global n p M y_ori
 a = zeros(n, p);
 for j = 1:n
+    logis = 1 / (1 + exp(- norm( M(:,:,j) * (x(j,:))' - y_ori(:,j) )));
+    logis * (1-logis) / norm( M(:,:,j) * (x(j,:))' - y_ori(:,j) ) * ;
     a(j,:) = (M(:,:,j)' * (M(:,:,j) * (x(j,:))' - y_ori(:,j)))';
 end
 end
@@ -189,6 +194,6 @@ function a = funS(x)
 global n M y_ori
 a = 0;
 for j = 1:n
-    a   = a + 0.5 * sum((M(:,:,j) * (x(j,:))' - y_ori(:,j)).^2);
+    a = a + 1 / (1 + exp(- norm( M(:,:,j) * (x(j,:))' - y_ori(:,j) )));
 end
 end
