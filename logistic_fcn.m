@@ -1,36 +1,35 @@
-function example2_noR
+function example1_noR
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%      minimize S(x)   subject to Wx = x   
-%    S is differentiable: S = 1/2||Mx-y||_2^2             
-%    W is the given mixing matrix             
-       
-%    Reference: A Decentralized Proximal-Gradient Method with Network 
+%      minimize S(x)   subject to Wx = x
+%    S is differentiable: S = 1/2||Mx-y||_2^2
+%    W is the given mixing matrix
+
+%    Reference: A Decentralized Proximal-Gradient Method with Network
 %               Independent Step-zsizes and Seperated Convergence Rates
-%       
+%
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 global n m p M y_ori lam
 path(path, '.\fcns')
-
 n = 40; % number of nodes
 m = 60;
 p = 50; % the dimension of x on each nodes
 
 L = n;
-% per = 16/L;
-resSubPath = 'per1-40overL_mu0_2';
-% call which function to change M
-modifyM_num = 7;
-Mrate = 2;
+% per_set=[14,18]; % parameters control the connectivity of the network
+% for perr = per_set
+%     per = perr/L;
+resSubPath = ['per','1-40','overL_mu0_5'];
+
 % may changed in the following function
-min_mu = 0.2; % set the smallest strongly convex parameter mu in S
+min_mu = 0.5; % set the smallest strongly convex parameter mu in S
 max_Lips = 1; % set the Lipschitz constant
 
 % static network
-% per = 20/L;
+% per = 40/L;
 % W = generateW(L, per);
 
-% W = generateW(L,per);
+% dynamic network
 for k = 1:40
     per = k/L;
     W(:,:,k) = generateW(L, per);
@@ -38,8 +37,9 @@ end
 
 [~,~,len_W] = size(W);
 
+% generate the smooth function S
 [M, x_ori, y_ori] = generateS(m, p, n,...
-    'withoutNonsmoothR',min_mu,max_Lips,Mrate,modifyM_num);
+    'withoutNonsmoothR',min_mu,max_Lips);
 
 rng('shuffle')
 
@@ -49,14 +49,16 @@ for i = 1:len_W
     [~, lambdan(i)] = eigW(W(:,:,i));
 end
 
+% find the Lipschitz constants and the strongly convex parameters of
+% S_i
 [Lips,mus] = getBetaSmoothAlphaStrong;
 max_Lips   = max(Lips);
 min_mu     = min(mus);
 
 % set parameters
-iter    = 200;
+iter    = 200;      % the maximum number of iterations
 tol     = 1e-11;     % tolerance, this controls |x-x_star|_F, not divided by |x_star|_F
-x0      = zeros(n,p);
+x0      = zeros(n,p);% initial guess of the solution
 x_star  = x_ori;     % true solution
 % Set the parameter for the solver
 paras.min_mu    = min_mu;
@@ -81,9 +83,8 @@ h   = figure;
 set(h, 'DefaultLineLineWidth', 4)
 norm_x_star = norm(x_star, 'fro');
 
-methods = {'NIDSS-adaptive','NIDSS','EXTRA','DIGing-ATC'};
-LineSpecs = {'-k','--k','-.b',':m','-.y'};
-
+methods = {'NIDSS','NIDSS-F','EXTRA','DIGing'};
+LineSpecs = {'-k','--k','-.b',':m'};
 numMethods = length(methods);
 outputs = cell(numMethods,1);
 legend_lab = cell(numMethods,1);
@@ -101,7 +102,7 @@ for i = 1:numMethods
         case {'DIGing'}
             paras.alpha = cRate./max_Lips*ones(n,1);
             paras.atc = 0;
-            outputs{i}  = obj.minimize_DIGing(paras);
+            outputs{i} = obj.minimize_DIGing(paras);
             legend_lab{i} = 'DIGing';
             
         case {'NIDSS-adaptive'}
@@ -172,9 +173,9 @@ xlabel('number of iterations');
 ylabel('$\frac{\left\Vert \mathbf{x}-\mathbf{x}^{*}\right\Vert}{\left\Vert \mathbf{x}^{*}\right\Vert}$','FontSize',20,'Interpreter','LaTex');
 
 legend(legend_lab,'FontSize',10,'Interpreter','LaTex');
-
 saveas(h,[resSubPath,'_compa3.fig']);
-% close;
+% xlim([0 80])
+%     close;
 prob.M = M;
 prob.x_ori = x_ori;
 prob.y_ori = y_ori;
@@ -182,13 +183,15 @@ prob.lam = lam;
 prob.W = W;
 
 save([resSubPath,'_compa3_prob.mat'],'prob');
+
 end
 
 function a = funGradS(x)
 global n p M y_ori
 a = zeros(n, p);
 for j = 1:n
-    a(j,:) = (M(:,:,j)' * (M(:,:,j) * (x(j,:))' - y_ori(:,j)))';
+    logis = 1 / (1 + exp(- norm( M(:,:,j) * (x(j,:))' - y_ori(:,j) )));
+    a(j,:) = logis * (1-logis) / norm( M(:,:,j) * (x(j,:))' - y_ori(:,j) ) * (M(:,:,j) * (x(j,:))' - y_ori(:,j))' * M(:,:,j);
 end
 end
 
@@ -196,6 +199,6 @@ function a = funS(x)
 global n M y_ori
 a = 0;
 for j = 1:n
-    a   = a + 0.5 * sum((M(:,:,j) * (x(j,:))' - y_ori(:,j)).^2);
+    a = a + 1 / (1 + exp(- norm( M(:,:,j) * (x(j,:))' - y_ori(:,j) )));
 end
 end

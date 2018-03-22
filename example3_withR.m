@@ -17,7 +17,7 @@ n = 40;
 m = 3;
 p = 200;
 
-% L = n;
+L = n;
 % per = 4/L;
 resSubPath = 'per1-40overL_mu0_1';
 
@@ -48,7 +48,7 @@ end
 max_Lips = max(Lips);
 min_mu = min(mus);
 % set parameters
-iter    = 20000;
+iter    = 200;
 tol     = 1e-7;     % tolerance, this controls |x-x_star|_F, not divided by |x_star|_F
 
 x0      = zeros(n,p);

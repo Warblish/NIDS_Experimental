@@ -110,7 +110,6 @@ classdef NIDS
                     case {'NIDS', 'NIDS-adaptive', 'NIDSS', 'NIDSS-adaptive'}
                         x_bar = 2 * x_cur - x_old - diag(alpha) * (gradS - gradS_old);
                         rand_integer = randi(set_len_W);
-                        disp(rand_integer)
                         z     = z - x_cur + tildeW(:,:,rand_integer) * x_bar;
                         x_new = this.getProxR(z, alpha);
                         
@@ -171,13 +170,11 @@ classdef NIDS
             for i=1:iter
                 if atc == 1
                     rand_integer = randi(set_len_W);   
-                    disp(rand_integer)
                     x_new = W(:,:,rand_integer) * (x_cur - diag(alpha) * y_cur);
                     gradS_new = this.getGradS(x_new);                    
                     y_new = W(:,:,rand_integer) * (y_cur + gradS_new - gradS);
                 else
                     rand_integer = randi(set_len_W);
-                    disp(rand_integer)
                     x_new = W(:,:,rand_integer) * x_cur - diag(alpha) * y_cur;
                     gradS_new = this.getGradS(x_new);                    
                     y_new = W(:,:,rand_integer) * y_cur + gradS_new - gradS;

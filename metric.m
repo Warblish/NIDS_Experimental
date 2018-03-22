@@ -25,12 +25,18 @@ resSubPath = ['per','1-40','overL_mu0_5'];
 min_mu = 0.5; % set the smallest strongly convex parameter mu in S
 max_Lips = 1; % set the Lipschitz constant
 
-% generate the network W
-for k = 1:40
-    per = k/L;
-    W(:,:,k) = generateW(L, per);
-end
+% static network
+per = 20/L;
+W = generateW(L, per);
+
+% dynamic network
+% for k = 1:40
+%     per = k/L;
+%     W(:,:,k) = generateW(L, per);
+% end
+
 [~,~,len_W] = size(W);
+
 % generate the smooth function S
 [M, x_ori, y_ori] = generateS(m, p, n,...
     'withoutNonsmoothR',min_mu,max_Lips);
@@ -50,7 +56,7 @@ max_Lips   = max(Lips);
 min_mu     = min(mus);
 
 % set parameters
-iter    = 1000;      % the maximum number of iterations
+iter    = 200;      % the maximum number of iterations
 tol     = 1e-11;     % tolerance, this controls |x-x_star|_F, not divided by |x_star|_F
 x0      = zeros(n,p);% initial guess of the solution
 x_star  = x_ori;     % true solution
@@ -77,7 +83,7 @@ h   = figure;
 set(h, 'DefaultLineLineWidth', 4)
 norm_x_star = norm(x_star, 'fro');
 
-methods = {'NIDSS','NIDSS-F','EXTRA','DIGing'};
+methods = {'NIDSS','NIDSS-F'};
 LineSpecs = {'-k','--k','-.b',':m'};
 numMethods = length(methods);
 outputs = cell(numMethods,1);
@@ -159,12 +165,12 @@ for i = 1:numMethods
     end
 end
 for i = 1:numMethods
-    semilogy(outputs{i}.err/norm_x_star,LineSpecs{i});
+    semilogy(outputs{i}.err,LineSpecs{i});
     hold on;
 end
 
 xlabel('number of iterations');
-ylabel('$\frac{\left\Vert \mathbf{x}-\mathbf{x}^{*}\right\Vert}{\left\Vert \mathbf{x}^{*}\right\Vert}$','FontSize',20,'Interpreter','LaTex');
+% ylabel('$\frac{\left\Vert \mathbf{x}-\mathbf{x}^{*}\right\Vert}{\left\Vert \mathbf{x}^{*}\right\Vert}$','FontSize',20,'Interpreter','LaTex');
 
 legend(legend_lab,'FontSize',10,'Interpreter','LaTex');
 saveas(h,[resSubPath,'_compa3.fig']);
@@ -184,7 +190,6 @@ function a = funGradS(x)
 global n p M y_ori
 a = zeros(n, p);
 for j = 1:n
-    1 / (1 + exp(- norm( M(:,:,j) * (x(j,:))' - y_ori(:,j) )))
     a(j,:) = (M(:,:,j)' * (M(:,:,j) * (x(j,:))' - y_ori(:,j)))';
 end
 end
@@ -193,6 +198,6 @@ function a = funS(x)
 global n M y_ori
 a = 0;
 for j = 1:n
-    a = a + 1 / (1 + exp(- norm( M(:,:,j) * (x(j,:))' - y_ori(:,j) )));
+    a   = a + 0.5 * sum((M(:,:,j) * (x(j,:))' - y_ori(:,j)).^2);
 end
 end
