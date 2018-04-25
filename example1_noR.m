@@ -19,18 +19,27 @@ L = n;
 % per_set=[14,18]; % parameters control the connectivity of the network
 % for perr = per_set
 %     per = perr/L;
-resSubPath = ['per','1-40','overL_mu0_5'];
-
+% for perr = 5:35
+% resSubPath = ['perr',num2str(perr-4)];
+perr = 35;
 % may changed in the following function
 min_mu = 0.5; % set the smallest strongly convex parameter mu in S
 max_Lips = 1; % set the Lipschitz constant
 
 % generate the network W
-for k = 1:40
-    per = k/L;
-    W(:,:,k) = generateW(L, per);
+W = cell(1,perr);
+rng('shuffle')
+perm = randperm(n,perr);
+for k = 1:perr
+    per = perm(k)/L;
+    W{k} = generateW(L,per);
 end
-[~,~,len_W] = size(W);
+
+% W{1} = generateW(L,15/L);
+% W{2} = generateW(L,35/L);
+
+W_num = length(W);
+
 % generate the smooth function S
 [M, x_ori, y_ori] = generateS(m, p, n,...
     'withoutNonsmoothR',min_mu,max_Lips);
@@ -38,9 +47,9 @@ end
 rng('shuffle')
 
 % find the smallest eigenvalue of W
-lambdan = zeros(len_W,1);
-for i = 1:len_W
-    [~, lambdan(i)] = eigW(W(:,:,i));
+lambdan = zeros(1,W_num);
+for i = 1:W_num
+    [~, lambdan(i)] = eigW(W{i});
 end
 
 % find the Lipschitz constants and the strongly convex parameters of
@@ -50,7 +59,7 @@ max_Lips   = max(Lips);
 min_mu     = min(mus);
 
 % set parameters
-iter    = 200;      % the maximum number of iterations
+iter    = 100;      % the maximum number of iterations
 tol     = 1e-11;     % tolerance, this controls |x-x_star|_F, not divided by |x_star|_F
 x0      = zeros(n,p);% initial guess of the solution
 x_star  = x_ori;     % true solution
@@ -73,12 +82,12 @@ obj            =  NIDS;  % using the class PrimalDual
 obj.getS       = @(x) feval(@funS, x);
 obj.getGradS   = @(x) feval(@funGradS, x);
 
-h   = figure;
+h = figure;
 set(h, 'DefaultLineLineWidth', 4)
 norm_x_star = norm(x_star, 'fro');
 
-methods = {'NIDSS','NIDSS-F','EXTRA','DIGing-ATC'};
-LineSpecs = {'-k','--k','-.b',':m'};
+methods = {'NIDSS','EXTRA','DIGing-ATC'};
+LineSpecs = {'-g','-.b',':m'};
 numMethods = length(methods);
 outputs = cell(numMethods,1);
 legend_lab = cell(numMethods,1);
@@ -106,9 +115,9 @@ for i = 1:numMethods
             
             %
             eye_L = eye(n);
-            c = zeros(len_W,1);
-            for j = 1:len_W
-                I_W = eye_L-W(:,:,j);
+            c = zeros(1,W_num);
+            for j = 1:W_num
+                I_W = eye_L-W{j};
                 [U,S,V] = svd(I_W);
                 a = diag(S);
                 inv_I_W = U*diag([a(1:end-1).^(-1);0])*V';
@@ -133,7 +142,7 @@ for i = 1:numMethods
             paras.c = c;
             paras.forcetTildeW = 0;
             outputs{i} = obj.minimize(paras);
-            legend_lab{i} = 'NIDS-$c={1/(\alpha(1-\lambda_n(\mathbf{W}))}$';
+            legend_lab{i} = 'NIDS';
             
         case {'NIDSS-F'}
             cRate = 1; % rate of the step size < 2
@@ -153,7 +162,7 @@ for i = 1:numMethods
             
             paras.alpha = cRate./max_Lips*ones(n,1);
             outputs{i} = obj.minimize(paras);
-            legend_lab{i} = ['EXTRA'];
+            legend_lab{i} = 'EXTRA';
         otherwise
             disp('????')
     end
@@ -165,9 +174,9 @@ end
 
 xlabel('number of iterations');
 ylabel('$\frac{\left\Vert \mathbf{x}-\mathbf{x}^{*}\right\Vert}{\left\Vert \mathbf{x}^{*}\right\Vert}$','FontSize',20,'Interpreter','LaTex');
-
+% title('Quadratic Function','FontSize',12)
 legend(legend_lab,'FontSize',10,'Interpreter','LaTex');
-saveas(h,[resSubPath,'_compa3.fig']);
+% saveas(h,[resSubPath,'.png']);
 % xlim([0 80])
 %     close;
 prob.M = M;
@@ -175,8 +184,6 @@ prob.x_ori = x_ori;
 prob.y_ori = y_ori;
 prob.lam = lam;
 prob.W = W;
-
-save([resSubPath,'_compa3_prob.mat'],'prob');
 
 end
 

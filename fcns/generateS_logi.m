@@ -1,4 +1,4 @@
-function [M_f,x_f,y_f,lam] = generateS(m,p,n,...
+function [M_f,x_f,y_f,lam] = generateS_logi(m,p,n,...
     method,mu,Lips,Mrate,modifyM_num)
 
 if (nargin < 6)
@@ -36,38 +36,24 @@ switch modifyM_num
         [M_f, M_f_T] = modifyM4(m,p,n,M_f,mu,Lips,Mrate);
     case 7
         [M_f, M_f_T] = modifyM7(m,p,n,M_f,mu,Lips,Mrate);
-    otherwise
-        disp('other value')
+    otherwise      
 end
 
 M_F=(reshape(M_f_T,p,n*m))';
 
-y_F = M_F*x_F + (max_x_F-min_x_F)/10000*rand(n*m,1);
+y_F = 1 ./ (1 + exp(-M_F*x_F)) + (max_x_F-min_x_F)/10000*rand(n*m,1);
 y_f=reshape(y_F,m,n);
 
-switch method
-    case {'NIDS','PG-EXTRA','PG-EXTRAF',...
-            'PGEXTRAF', 'PGEXTRA', 'withNonsmoothR'}
-        lam = 1/n;
-        oneOverLips=1/norm(M_F,2)^2;
-        % fista
-        t = 1;  x = x_F; y = x;
-        %       GradG(y) = M_F'*(M_F*y-y_F)
-        %       xnew = ProxF( y - 1/L*GradG(y), 1/L );
-        %       1/L = oneOverLips
-        for i=1:max_iter
-%           the 3rd input: lam * n * oneOverLips = oneOverLips;
-            xnew = wthresh(y-oneOverLips*M_F'*(M_F*y-y_F),'s',oneOverLips);
-            tnew = (1+sqrt(1+4*t^2))/2;
-            y = xnew + (t-1)/(tnew)*(xnew-x);
-            x = xnew; t = tnew;
-        end
-        x_CS = x;
+x = x_F;
+GradS = @(x) funGradS(x,M_f,y_f,n,p);
+S = @(x) funS(x,M_f,y_f,n);
 
-    case {'NIDSS','EXTRAF', 'EXTRA','withoutNonsmoothR'}
-        lam = 0;
-        x_CS = M_F\y_F;
+for i=1:max_iter
+    xnew = x - GradGradS(x)\GradS(x);
+    x = xnew;
+    disp(i)
 end
+x_CS = x;
 
 % lambda_vec=lambda_ori/n;
 x_f=(x_CS*ones(1,n))';
@@ -139,5 +125,23 @@ for i=1:n
     end
     
     M_f_T(:,:,i) = M_f(:,:,i)';
+end
+end
+
+function a = funGradS(x,M,y_ori,n,p)
+a = zeros(n, p);
+for j = 1:n
+    eta = M(:,:,j) * x;
+    eta = 1 ./ (1+exp(-eta)) - y_ori(:,j);
+    a(j,:) = mean(diag(eta) * M(:,:,j),1);
+end
+end
+
+function a = funS(x,M,y_ori,n)
+a = 0;
+for j = 1:n
+    eta = M(:,:,j) * x;
+    eta = log(1+exp(-eta)) .* y_ori(:,j) + log(1+exp(eta)) .* (1 - y_ori(:,j));
+    a = a + mean(eta,1);
 end
 end

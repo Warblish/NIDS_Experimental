@@ -31,12 +31,13 @@ max_Lips = 1; % set the Lipschitz constant
 % W = generateW(L, per);
 
 % W = generateW(L,per);
+W = cell(1,40);
 for k = 1:40
     per = k/L;
-    W(:,:,k) = generateW(L, per);
+    W{k} = generateW(L, per);
 end
 
-[~,~,len_W] = size(W);
+W_num = length(W);
 
 [M, x_ori, y_ori] = generateS(m, p, n,...
     'withoutNonsmoothR',min_mu,max_Lips,Mrate,modifyM_num);
@@ -44,9 +45,9 @@ end
 rng('shuffle')
 
 % find the smallest eigenvalue of W
-lambdan = zeros(len_W,1);
-for i = 1:len_W
-    [~, lambdan(i)] = eigW(W(:,:,i));
+lambdan = zeros(1,W_num);
+for i = 1:W_num
+    [~, lambdan(i)] = eigW(W{i});
 end
 
 [Lips,mus] = getBetaSmoothAlphaStrong;
@@ -101,7 +102,7 @@ for i = 1:numMethods
         case {'DIGing'}
             paras.alpha = cRate./max_Lips*ones(n,1);
             paras.atc = 0;
-            outputs{i}  = obj.minimize_DIGing(paras);
+            outputs{i} = obj.minimize_DIGing(paras);
             legend_lab{i} = 'DIGing';
             
         case {'NIDSS-adaptive'}
@@ -111,9 +112,9 @@ for i = 1:numMethods
             
             %
             eye_L = eye(n);
-            c = zeros(len_W,1);
-            for j = 1:len_W
-                I_W = eye_L-W(:,:,j);
+            c = zeros(1,W_num);
+            for j = 1:W_num
+                I_W = eye_L-W{j};
                 [U,S,V] = svd(I_W);
                 a = diag(S);
                 inv_I_W = U*diag([a(1:end-1).^(-1);0])*V';
@@ -158,7 +159,7 @@ for i = 1:numMethods
             
             paras.alpha = cRate./max_Lips*ones(n,1);
             outputs{i} = obj.minimize(paras);
-            legend_lab{i} = ['EXTRA'];
+            legend_lab{i} = 'EXTRA';
         otherwise
             disp('????')
     end

@@ -29,18 +29,19 @@ max_Lips = 1; % set the Lipschitz constant
 % [M, x_ori, y_ori, lam, W] = generateAll(m, p, n, per,...
 %     'withNonsmoothR', min_mu,max_Lips);
 % generate the network W
+W = cell(1, 40);
 for k = 1:40
     per = k/L;
-    W(:,:,k) = generateW(L, per);
+    W{k} = generateW(L, per);
 end
-[~,~,len_W] = size(W);
+len_W = length(W);
 [M, x_ori, y_ori, lam] = generateS(m, p, n,...
     'withNonsmoothR',min_mu,max_Lips);
 
 % find the smallest eigenvalue of W
-lambdan = zeros(len_W,1);
+lambdan = zeros(1,len_W);
 for i = 1:len_W
-    [~, lambdan(i)] = eigW(W(:,:,i));
+    [~, lambdan(i)] = eigW(W{i});
 end
 
 % find the max Lipschitz constants and strongly convex parameters of the function S
@@ -48,7 +49,7 @@ end
 max_Lips = max(Lips);
 min_mu = min(mus);
 % set parameters
-iter    = 200;
+iter    = 12000;
 tol     = 1e-7;     % tolerance, this controls |x-x_star|_F, not divided by |x_star|_F
 
 x0      = zeros(n,p);
@@ -83,11 +84,11 @@ methods = {'NIDS','PGEXTRA'};
 numMethods = length(methods);
 
 
-cRate_NIDS = [3.5, 3.6, 3.7];
+cRate_NIDS = [1, 1.5, 1.9];
 LineSpecs_NIDS = {':k','--k','-k','-*r','-.y','-.c',':r',':k',':m',':b'};
 numcRate_NIDS = length(cRate_NIDS);
 
-cRate_PGEXTRA = [1.3, 1.4];
+cRate_PGEXTRA = [1, 1.2, 1.3, 1.4];
 LineSpecs_PGEXTRA = {':b','--b','-b','-m','-c'};
 numcRate_PGEXTRA = length(cRate_PGEXTRA);
 
@@ -144,7 +145,7 @@ end
 
 xlabel('number of iterations');
 ylabel('$\frac{\left\Vert \mathbf{x}-\mathbf{x}^{*}\right\Vert}{\left\Vert \mathbf{x}^{*}\right\Vert}$','FontSize',20,'Interpreter','LaTex');
-
+title('Non-smooth Function')
 legend(legend_lab,'FontSize',10);
 
 % tol     = 1e-7; xlim([0 20000]); ylim([1e-9 100]);

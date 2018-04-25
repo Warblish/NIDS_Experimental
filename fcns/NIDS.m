@@ -40,30 +40,29 @@ classdef NIDS
             alpha   = paras.alpha;  % the stepsize, which can be different for different nodes
             method  = paras.method; % the method that used
             W       = paras.W;      % the mixing matrix
-            [~,~,len_W] = size(W);
+            W_num = length(W);
             
             Q       = diag(1./alpha);
             eye_L   = eye(n);
-            for i = 1:len_W
-                I_W(:,:,i) = eye_L - W(:,:,i);
+            for i = 1:W_num
+                I_W{i} = eye_L - W{i};
             end
-            set_len_W = len_W;
             
             if isfield(paras, 'forcetTildeW') && paras.forcetTildeW
-                for i = 1:len_W
-                    tildeW(:,:,i) = (eye_L + W(:,:,i))/2;
+                for i = 1:W_num
+                    tildeW{i} = (eye_L + W{i})/2;
                 end
             else
                 switch method
                     case {'NIDS', 'NIDS-adaptive', 'NIDSS', 'NIDSS-adaptive'}  % NIDS
                         c = paras.c;      % the parameter c in  NIDS
                         
-                        for i = 1:len_W
-                            tildeW(:,:,i) = eye_L - c(i) * diag(alpha) * I_W(:,:,i);
+                        for i = 1:W_num
+                            tildeW{i} = eye_L - c(i) * diag(alpha) * I_W{i};
                         end
                     case {'PG-EXTRA', 'PGEXTRA', 'EXTRA'}
-                        for i = 1:len_W
-                            tildeW(:,:,i) = (eye_L + W(:,:,i))/2;
+                        for i = 1:W_num
+                            tildeW{i} = (eye_L + W{i})/2;
                         end
                 end
             end
@@ -90,8 +89,8 @@ classdef NIDS
                     gradS_old = gradS;                      % increase k by 1
                     gradS   = this.getGradS(x_cur);         % increase k by 1
                 case {'PG-EXTRA', 'PGEXTRA', 'EXTRA'}
-                    rand_integer = randi(set_len_W);
-                    z       = W(:,:,rand_integer) * x_cur - diag(alpha) * gradS;
+                    rand_integer = randi(W_num);
+                    z       = W{rand_integer} * x_cur - diag(alpha) * gradS;
                     x_new   = this.getProxR(z, alpha);
                     x_old   = x_cur;                        % increase k by 1
                     x_cur   = x_new;                        % increase k by 1
@@ -104,19 +103,20 @@ classdef NIDS
             eng(2)  = this.E(x_cur);
             
             for i=1:iter
+                disp(i)
                 % x_new x^{k+1}, x_cur x^{k}, x_old x^{k-1}
                 %                gradS {k}, gradS_old {k-1}
                 switch method
                     case {'NIDS', 'NIDS-adaptive', 'NIDSS', 'NIDSS-adaptive'}
                         x_bar = 2 * x_cur - x_old - diag(alpha) * (gradS - gradS_old);
-                        rand_integer = randi(set_len_W);
-                        z     = z - x_cur + tildeW(:,:,rand_integer) * x_bar;
+                        rand_integer = randi(W_num);
+                        z     = z - x_cur + tildeW{rand_integer} * x_bar;
                         x_new = this.getProxR(z, alpha);
                         
                     case {'PG-EXTRA', 'PGEXTRA', 'EXTRA'}
                         x_bar = 2 * x_cur - x_old;
-                        rand_integer = randi(set_len_W);
-                        z = z - x_cur + tildeW(:,:,rand_integer) * x_bar - diag(alpha) * (gradS - gradS_old);
+                        rand_integer = randi(W_num);
+                        z = z - x_cur + tildeW{rand_integer} * x_bar - diag(alpha) * (gradS - gradS_old);
                         x_new = this.getProxR(z, alpha);
                     otherwise
                         warning('Unexpected Method, Please choose from ?? ')
@@ -130,7 +130,7 @@ classdef NIDS
                 gradS       = this.getGradS(x_cur);     % increase k by 1
                 err(i + 2)  = norm(x_cur-x_star,'fro');
                 eng(i + 2)  = this.E(x_cur);
-                
+                disp(i)
                 if err(i + 2) < tol
                     x_array = x_array(1:i);
                     d_array = d_array(1:i);
@@ -156,28 +156,27 @@ classdef NIDS
             alpha   = paras.alpha;  % the stepsize, which can be different for different nodes
             iter    = paras.iter;   % the maximum number of iterations
             W       = paras.W;      % the mixing matrix
-            [~,~,len_W] = size(W);
+            W_num = length(W);
             atc     = paras.atc;    % whether to choose ATC or not
             err     = zeros(iter + 1,1);   % store the L2 norm with x_star
             eng     = zeros(iter + 1,1);   % store the objective function values
             err(1)  = norm(x_cur - x_star,'fro');
             eng(1)  = this.E(x_cur);
             x_array = cell(iter,1); % store all x values
-            set_len_W = len_W;
             
             convergeTol = 0;                    % reach convergence tolerance or not
             
             for i=1:iter
                 if atc == 1
-                    rand_integer = randi(set_len_W);   
-                    x_new = W(:,:,rand_integer) * (x_cur - diag(alpha) * y_cur);
-                    gradS_new = this.getGradS(x_new);                    
-                    y_new = W(:,:,rand_integer) * (y_cur + gradS_new - gradS);
+                    rand_integer = randi(W_num);   
+                    x_new = W{rand_integer} * (x_cur - diag(alpha) * y_cur);
+                    gradS_new = this.getGradS(x_new);
+                    y_new = W{rand_integer} * (y_cur + gradS_new - gradS);
                 else
-                    rand_integer = randi(set_len_W);
-                    x_new = W(:,:,rand_integer) * x_cur - diag(alpha) * y_cur;
-                    gradS_new = this.getGradS(x_new);                    
-                    y_new = W(:,:,rand_integer) * y_cur + gradS_new - gradS;
+                    rand_integer = randi(W_num);
+                    x_new = W{rand_integer} * x_cur - diag(alpha) * y_cur;
+                    gradS_new = this.getGradS(x_new);
+                    y_new = W{rand_integer} * y_cur + gradS_new - gradS;
                 end
                 x_array{i} = x_new;
                 
