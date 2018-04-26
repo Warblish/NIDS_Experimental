@@ -1,13 +1,13 @@
 function [M_f,x_f,y_f,lam] = generateS_logi(m,p,n,...
-    method,mu,Lips,Mrate,modifyM_num)
+    mu,Lips,Mrate,modifyM_num)
 
-if (nargin < 6)
+if (nargin < 5)
     Lips = 1;
 end
-if (nargin < 7)
+if (nargin < 6)
     Mrate = 1;
 end
-if (nargin < 8)
+if (nargin < 7)
     modifyM_num = 4;
 end
 L_f=1;
@@ -17,7 +17,7 @@ L_f=1;
 M_mean=0;
 M_var=1;
 
-max_iter = 20000*2;
+max_iter = 20000*10;
 
 rng(8,'twister');
 % x_F in [-15,15], only around 1/4 elements are non-zeros
@@ -46,10 +46,10 @@ y_f=reshape(y_F,m,n);
 
 x = x_F;
 GradS = @(x) funGradS(x,M_f,y_f,n,p);
-S = @(x) funS(x,M_f,y_f,n);
+S = @(x) funS(x,M_f,y_f,n,p);
 
 for i=1:max_iter
-    xnew = x - GradGradS(x)\GradS(x);
+    xnew = x - GradS(x)\S(x)';
     x = xnew;
     disp(i)
 end
@@ -128,20 +128,20 @@ for i=1:n
 end
 end
 
-function a = funGradS(x,M,y_ori,n,p)
-a = zeros(n, p);
+function a = funS(x,M,y_ori,n,p)
+a = zeros(1, p);
 for j = 1:n
     eta = M(:,:,j) * x;
     eta = 1 ./ (1+exp(-eta)) - y_ori(:,j);
-    a(j,:) = mean(diag(eta) * M(:,:,j),1);
+    a = a + mean(diag(eta) * M(:,:,j),1);
 end
 end
 
-function a = funS(x,M,y_ori,n)
-a = 0;
+function a = funGradS(x,M,~,n,p)
+a = zeros(p,p);
 for j = 1:n
     eta = M(:,:,j) * x;
-    eta = log(1+exp(-eta)) .* y_ori(:,j) + log(1+exp(eta)) .* (1 - y_ori(:,j));
-    a = a + mean(eta,1);
+    eta = eta ./ (1+eta).^2;
+    a = a + M(:,:,j)' * diag(eta) * M(:,:,j) / length(eta);
 end
 end

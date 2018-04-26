@@ -42,7 +42,7 @@ W_num = length(W);
 
 % generate the smooth function S
 [M, x_ori, y_ori] = generateS_logi(m, p, n,...
-    'withoutNonsmoothR',min_mu,max_Lips);
+    min_mu,max_Lips);
 
 rng('shuffle')
 
@@ -59,7 +59,7 @@ max_Lips   = max(Lips);
 min_mu     = min(mus);
 
 % set parameters
-iter    = 20000;      % the maximum number of iterations
+iter    = 200000;      % the maximum number of iterations
 tol     = 1e-11;     % tolerance, this controls |x-x_star|_F, not divided by |x_star|_F
 x0      = zeros(n,p);% initial guess of the solution
 x_star  = x_ori;     % true solution
